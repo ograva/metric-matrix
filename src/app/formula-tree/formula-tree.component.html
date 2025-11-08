@@ -1,42 +1,74 @@
 <div class="tree-node" [style]="getIndentStyle()" *ngIf="node">
-  <div class="node-header" 
-       [class.formula-node]="node.type === 'formula'" 
-       [class.factor-node]="node.type === 'factor'"
-       [class.reused-node]="isReusedNode()">
-    <button 
-      *ngIf="hasChildren()" 
-      class="expand-button" 
-      (click)="toggleExpand()"
-      [attr.aria-label]="isExpanded ? 'Collapse' : 'Expand'">
-      {{ isExpanded ? '▼' : '▶' }}
-    </button>
-    
-    <div class="node-content">
-      <div class="node-main">
-        <span class="node-name">{{ node.name }}</span>
-        <span class="node-type-badge">{{ node.type }}</span>
-        <span *ngIf="isReusedNode()" class="reused-badge" 
-              [title]="'This node is reused by ' + getParentCount() + ' parent(s)'">
-          ♻️ Reused ({{ getParentCount() }}x)
-        </span>
-      </div>
+  <!-- Display Mode -->
+  <div *ngIf="!isEditing">
+    <div class="node-header" 
+        [class.formula-node]="node.type === 'formula'" 
+        [class.factor-node]="node.type === 'factor'"
+        [class.reused-node]="isReusedNode()">
+      <button 
+        *ngIf="hasChildren()" 
+        class="expand-button" 
+        (click)="toggleExpand()"
+        [attr.aria-label]="isExpanded ? 'Collapse' : 'Expand'">
+        {{ isExpanded ? '▼' : '▶' }}
+      </button>
       
-      <div class="node-details">
-        <span *ngIf="node.type === 'formula'" class="formula">
-          Formula: <code>{{ node.formula }}</code>
-        </span>
-        <span *ngIf="node.type === 'factor'" class="value">
-          Value: {{ node.value }}
-        </span>
-        <span class="computed-value">
-          = <strong>{{ node.computedValue | number:'1.2-2' }}</strong>
-          <span *ngIf="node.unit" class="unit">{{ node.unit }}</span>
-        </span>
+      <div class="node-content">
+        <div class="node-main">
+          <span class="node-name" (click)="startEditing()">{{ node.name }}</span>
+          <span class="node-type-badge">{{ node.type }}</span>
+          <span *ngIf="isReusedNode()" class="reused-badge" 
+                [title]="'This node is reused by ' + getParentCount() + ' parent(s)'">
+            ♻️ Reused ({{ getParentCount() }}x)
+          </span>
+        </div>
+        
+        <div class="node-details">
+          <span *ngIf="node.type === 'formula'" class="formula">
+            Formula: <code>{{ node.formula }}</code>
+          </span>
+          <span *ngIf="node.type === 'factor'" class="value">
+            Value: {{ node.value }}
+          </span>
+          <span class="computed-value">
+            = <strong>{{ node.computedValue | number:'1.2-2' }}</strong>
+            <span *ngIf="node.unit" class="unit">{{ node.unit }}</span>
+          </span>
+        </div>
+        
+        <div *ngIf="node.description" class="node-description">
+          {{ node.description }}
+        </div>
       </div>
-      
-      <div *ngIf="node.description" class="node-description">
-        {{ node.description }}
-      </div>
+    </div>
+  </div>
+
+  <!-- Edit Mode -->
+  <div *ngIf="isEditing" class="edit-form">
+    <h4>Editing: {{ node.name }}</h4>
+    <div class="form-group">
+      <label>Name</label>
+      <input [(ngModel)]="editableNode.name" class="form-control">
+    </div>
+    <div class="form-group" *ngIf="editableNode.type === 'factor'">
+      <label>Value</label>
+      <input type="number" [(ngModel)]="editableNode.value" class="form-control">
+    </div>
+    <div class="form-group" *ngIf="editableNode.type === 'formula'">
+      <label>Formula</label>
+      <input [(ngModel)]="editableNode.formula" class="form-control">
+    </div>
+    <div class="form-group">
+      <label>Unit</label>
+      <input [(ngModel)]="editableNode.unit" class="form-control">
+    </div>
+    <div class="form-group">
+      <label>Description</label>
+      <textarea [(ngModel)]="editableNode.description" class="form-control"></textarea>
+    </div>
+    <div class="button-group">
+      <button class="btn btn-primary" (click)="saveEdit()">Save</button>
+      <button class="btn btn-secondary" (click)="cancelEdit()">Cancel</button>
     </div>
   </div>
 
@@ -44,7 +76,8 @@
     <app-formula-tree 
       *ngFor="let child of children" 
       [nodeId]="child.id" 
-      [level]="level + 1">
+      [level]="level + 1"
+      (nodeUpdated)="nodeUpdated.emit()">
     </app-formula-tree>
   </div>
 </div>

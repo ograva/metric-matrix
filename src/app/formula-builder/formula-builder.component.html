@@ -226,19 +226,41 @@
 
     <main class="tree-display">
       <div class="panel">
-        <h2>Formula Trees</h2>
-        
-        <div *ngIf="rootNodeIds.length > 0" class="tree-container">
-          <div *ngFor="let rootId of rootNodeIds; let i = index" class="tree-section">
-            <h3 class="tree-title">Tree {{ i + 1 }}</h3>
-            <app-formula-tree [nodeId]="rootId"></app-formula-tree>
+        <div class="view-header">
+          <h2>Formula Visualization</h2>
+          <div class="view-toggle">
+            <button 
+              class="btn-view" 
+              [class.active]="diagramView === 'tree'" 
+              (click)="diagramView = 'tree'">
+              Tree View
+            </button>
+            <button 
+              class="btn-view" 
+              [class.active]="diagramView === 'gojs'" 
+              (click)="diagramView = 'gojs'">
+              Diagram View
+            </button>
           </div>
         </div>
-
-        <div *ngIf="rootNodeIds.length === 0" class="empty-state">
-          <p>No trees created yet.</p>
-          <p>Create a new node or load the sample tree to get started.</p>
-          <p class="highlight">💡 The sample tree demonstrates node reuse: the "price" node is shared across multiple calculations!</p>
+        
+        <div [ngSwitch]="diagramView">
+          <div *ngSwitchCase="'tree'">
+            <div *ngIf="rootNodeIds.length > 0" class="tree-container">
+              <div *ngFor="let rootId of rootNodeIds; let i = index" class="tree-section">
+                <h3 class="tree-title">Tree {{ i + 1 }}</h3>
+                <app-formula-tree [nodeId]="rootId"></app-formula-tree>
+              </div>
+            </div>
+            <div *ngIf="rootNodeIds.length === 0" class="empty-state">
+              <p>No trees created yet.</p>
+              <p>Create a new node or load the sample tree to get started.</p>
+              <p class="highlight">💡 The sample tree demonstrates node reuse: the "price" node is shared across multiple calculations!</p>
+            </div>
+          </div>
+          <div *ngSwitchCase="'gojs'">
+            <app-gojs-diagram [nodes]="gojsNodes" [links]="gojsLinks"></app-gojs-diagram>
+          </div>
         </div>
       </div>
     </main>

@@ -643,11 +643,11 @@ export class FormulaTreeService {
    * Creates a sample tree for demonstration showing node reuse
    * Price node is reused in multiple calculations
    */
-  createSampleTree(): string[] {
+  createSampleTree(currencySymbol: string = '$'): string[] {
     this.clearRegistry();
 
     // Create reusable factor nodes
-    const price = this.createFactorNode('price', 100, 'Unit price', '$');
+    const price = this.createFactorNode('price', 100, 'Unit price', currencySymbol);
     const quantity1 = this.createFactorNode('quantity1', 5, 'Quantity for order 1', 'units');
     const quantity2 = this.createFactorNode('quantity2', 3, 'Quantity for order 2', 'units');
     const taxRate = this.createFactorNode('taxRate', 0.15, 'Tax rate', 'ratio');
@@ -658,7 +658,7 @@ export class FormulaTreeService {
       'price * quantity1',
       [price.id, quantity1.id],
       'Subtotal for order 1',
-      '$'
+      currencySymbol
     );
 
     const tax1 = this.createFormulaNode(
@@ -666,7 +666,7 @@ export class FormulaTreeService {
       'subtotal1 * taxRate',
       [subtotal1.id, taxRate.id],
       'Tax for order 1',
-      '$'
+      currencySymbol
     );
 
     const total1 = this.createFormulaNode(
@@ -674,7 +674,7 @@ export class FormulaTreeService {
       'subtotal1 + tax1',
       [subtotal1.id, tax1.id],
       'Final total for order 1',
-      '$'
+      currencySymbol
     );
 
     // Order 2 calculations (also uses the same price node!)
@@ -683,7 +683,7 @@ export class FormulaTreeService {
       'price * quantity2',
       [price.id, quantity2.id],
       'Subtotal for order 2',
-      '$'
+      currencySymbol
     );
 
     const tax2 = this.createFormulaNode(
@@ -691,7 +691,7 @@ export class FormulaTreeService {
       'subtotal2 * taxRate',
       [subtotal2.id, taxRate.id],
       'Tax for order 2',
-      '$'
+      currencySymbol
     );
 
     const total2 = this.createFormulaNode(
@@ -699,7 +699,7 @@ export class FormulaTreeService {
       'subtotal2 + tax2',
       [subtotal2.id, tax2.id],
       'Final total for order 2',
-      '$'
+      currencySymbol
     );
 
     // Grand total combining both orders
@@ -708,7 +708,7 @@ export class FormulaTreeService {
       'total1 + total2',
       [total1.id, total2.id],
       'Combined total for both orders',
-      '$'
+      currencySymbol
     );
 
     // Mark the root nodes for display

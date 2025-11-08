@@ -1,0 +1,63 @@
+GoJS Visualization Enhancement Summary
+=====================================
+
+Overview:
+---------
+Integrated the GoJS library to provide an alternative, graphical visualization of the formula tree model. This offers a powerful "whole picture" view that complements the existing nested list view. The visualization uses a tree layout with options for both vertical and horizontal orientations, and avoids shared nodes to prevent crossing links.
+
+Key Implementation Steps:
+-------------------------
+
+1.  **Installed GoJS Library**
+    - The `gojs` npm package was added as a project dependency.
+
+2.  **Created `GojsDiagramComponent`**
+    - A new, standalone Angular component (`src/app/gojs-diagram/`) was generated to encapsulate all GoJS-related logic.
+    - This component is responsible for initializing the diagram, defining templates, and loading data.
+
+3.  **Designed GoJS Templates**
+    - **Node Template**: A custom node template was created to clearly display key information for each formula or factor node:
+        - **Name**: The node's unique name.
+        - **Details**: The formula (for formula nodes) or the direct value (for factor nodes).
+        - **Computed Value**: The final calculated result, including its unit.
+        - **Color Coding**: 
+            - Formula Nodes: Light Green (`#C8E6C9`)
+            - Factor Nodes: Light Blue (`#BBDEFB`)
+    - **Link Template**: Simple orthogonal links with standard arrows are used to show the directional flow of data from parent to child.
+    - **Layout Options**: 
+        - **Vertical Layout**: Top-down tree structure using `TreeLayout` with angle 0.
+        - **Horizontal Layout**: Left-to-right tree structure using `TreeLayout` with angle 90.
+        - **Layout Toggle**: A button allows switching between vertical and horizontal orientations.
+
+4.  **Data Structure Optimization**
+    - **Unique Node Instances**: To avoid crossing links and cluttered visualizations, the data transformation creates unique instances of reused nodes. Each occurrence in the tree gets its own node in the diagram, preventing shared nodes from causing visual complexity.
+    - **Tree Traversal**: The `updateGojsData()` method now traverses from root nodes, creating unique keys for each node instance (e.g., `childId_parentKey`).
+
+5.  **Integrated into `FormulaBuilderComponent`**
+    - **View Toggle**: A "Tree View" / "Diagram View" toggle has been added to the main UI. This allows the user to switch between the original recursive list and the new GoJS diagram.
+    - **Data Transformation**: The `updateGojsData()` method transforms the application's internal `FormulaNode` array into the `nodes` and `links` array format required by GoJS, ensuring unique instances for reused nodes.
+    - **Live Updates**: This data transformation is called automatically whenever the tree is modified (e.g., node creation, value updates), ensuring the GoJS diagram is always in sync with the current state of the model.
+
+How to Use:
+-----------
+1.  Run the application.
+2.  In the main builder view, locate the "Formula Visualization" panel.
+3.  Click the "Diagram View" button in the toggle switch.
+4.  The view will switch to the GoJS diagram, showing a graphical representation of the entire formula tree.
+5.  Use the "Switch to Horizontal/Vertical Layout" button to change the tree orientation.
+
+Benefits of this Enhancement:
+-----------------------------
+- **Clarity**: Provides clear visualizations of complex formula relationships without crossing links.
+- **Flexibility**: Multiple layout options (vertical/horizontal) for different screen sizes and preferences.
+- **Insight**: Makes it easy to see how shared nodes connect to multiple parts of the tree through repeated instances.
+- **Usability**: Offers a powerful alternative to the nested list, which can become complex for large trees.
+- **Encapsulation**: All GoJS logic is contained within its own component, keeping the codebase clean.
+
+Files Modified/Created:
+-----------------------
+- `package.json`: Added `gojs` dependency.
+- `src/app/gojs-diagram/`: New component folder and files.
+- `src/app/formula-builder/formula-builder.component.ts`: Added logic for data transformation (with unique instances) and view toggling.
+- `src/app/formula-builder/formula-builder.component.html`: Added the view toggle and the `<app-gojs-diagram>` component.
+- `src/app/formula-builder/formula-builder.component.scss`: Added styling for the view toggle.

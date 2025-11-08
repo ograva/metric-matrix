@@ -1,21 +1,26 @@
-import { Component, Input, OnInit } from '@angular/core';
+import { Component, Input, OnInit, Output, EventEmitter } from '@angular/core';
 import { CommonModule } from '@angular/common';
+import { FormsModule } from '@angular/forms';
 import { FormulaNode } from '../models/formula-node.model';
 import { FormulaTreeService } from '../services/formula-tree.service';
 
 @Component({
   selector: 'app-formula-tree',
-  imports: [CommonModule],
+  standalone: true,
+  imports: [CommonModule, FormsModule, FormulaTreeComponent],
   templateUrl: './formula-tree.component.html',
   styleUrl: './formula-tree.component.scss'
 })
 export class FormulaTreeComponent implements OnInit {
   @Input() nodeId!: string;
   @Input() level: number = 0;
+  @Output() nodeUpdated = new EventEmitter<void>();
 
   node: FormulaNode | undefined;
   children: FormulaNode[] = [];
   isExpanded: boolean = true;
+  isEditing: boolean = false;
+  editableNode: Partial<FormulaNode> = {};
 
   constructor(private formulaTreeService: FormulaTreeService) {}
 
@@ -31,6 +36,26 @@ export class FormulaTreeComponent implements OnInit {
         .map(id => this.formulaTreeService.getNode(id))
         .filter(node => node !== undefined) as FormulaNode[];
     }
+  }
+
+  startEditing(): void {
+    if (this.node) {
+      this.editableNode = { ...this.node };
+      this.isEditing = true;
+    }
+  }
+
+  saveEdit(): void {
+    if (this.node) {
+      this.formulaTreeService.updateNode(this.node.id, this.editableNode);
+      this.isEditing = false;
+      this.nodeUpdated.emit(); // Notify parent to refresh data
+    }
+  }
+
+  cancelEdit(): void {
+    this.isEditing = false;
+    this.editableNode = {};
   }
 
   toggleExpand(): void {

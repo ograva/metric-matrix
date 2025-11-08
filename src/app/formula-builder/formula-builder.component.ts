@@ -4,10 +4,12 @@ import { FormsModule } from '@angular/forms';
 import { FormulaTreeComponent } from '../formula-tree/formula-tree.component';
 import { FormulaTreeService } from '../services/formula-tree.service';
 import { FormulaNode } from '../models/formula-node.model';
+import { GojsDiagramComponent } from '../gojs-diagram/gojs-diagram.component';
+import * as go from 'gojs';
 
 @Component({
   selector: 'app-formula-builder',
-  imports: [CommonModule, FormsModule, FormulaTreeComponent],
+  imports: [CommonModule, FormsModule, FormulaTreeComponent, GojsDiagramComponent],
   templateUrl: './formula-builder.component.html',
   styleUrl: './formula-builder.component.scss'
 })
@@ -34,6 +36,11 @@ export class FormulaBuilderComponent implements OnInit {
   computedChildValue: number | null = null;
   computeError: string | null = null;
 
+  // GoJS data
+  gojsNodes: go.ObjectData[] = [];
+  gojsLinks: go.ObjectData[] = [];
+  diagramView: 'tree' | 'gojs' = 'tree';
+
   constructor(public formulaTreeService: FormulaTreeService) {}
 
   ngOnInit(): void {
@@ -41,7 +48,7 @@ export class FormulaBuilderComponent implements OnInit {
   }
 
   loadSampleTree(): void {
-    this.rootNodeIds = this.formulaTreeService.createSampleTree();
+    this.rootNodeIds = this.formulaTreeService.createSampleTree('₱');
     this.updateNodeList();
   }
 
@@ -106,6 +113,50 @@ export class FormulaBuilderComponent implements OnInit {
   updateNodeList(): void {
     this.allNodes = this.formulaTreeService.getAllNodes();
     this.availableNodes = this.allNodes.filter(n => n.type === 'factor' || n.type === 'formula');
+    this.updateGojsData();
+  }
+
+  updateGojsData(): void {
+    const nodes: go.ObjectData[] = [];
+    const links: go.ObjectData[] = [];
+    const visited = new Set<string>();
+
+    const buildTree = (nodeId: string, parentKey?: string) => {
+      const node = this.formulaTreeService.getNode(nodeId);
+      if (!node) return;
+
+      // Create a unique key for this node instance in the tree
+      const uniqueKey = parentKey ? `${nodeId}_${parentKey}` : nodeId;
+
+      if (visited.has(uniqueKey)) return; // Avoid duplicates in same path
+      visited.add(uniqueKey);
+
+      nodes.push({
+        key: uniqueKey,
+        name: node.name,
+        details: node.type === 'formula' ? node.formula : `Value: ${node.value}`,
+        value: `${node.computedValue?.toFixed(2) ?? 'N/A'} ${node.unit || ''}`,
+        background: node.type === 'formula' ? '#C8E6C9' : '#BBDEFB'
+      });
+
+      // Recursively build children
+      node.childrenIds.forEach(childId => {
+        const childUniqueKey = `${childId}_${uniqueKey}`;
+        links.push({
+          from: uniqueKey,
+          to: childUniqueKey
+        });
+        buildTree(childId, uniqueKey);
+      });
+    };
+
+    // Build from each root
+    this.rootNodeIds.forEach(rootId => {
+      buildTree(rootId);
+    });
+
+    this.gojsNodes = nodes;
+    this.gojsLinks = links;
   }
 
   resetTree(): void {

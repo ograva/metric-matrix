@@ -15,10 +15,11 @@ MetricMatrix uses a tree structure to model formulas:
 A single node (like `price`) can be used by multiple parent formulas. When you update a shared factor value, all dependent formulas automatically recalculate through the entire tree hierarchy.
 
 ### 🌲 Tree Visualization
-- Color-coded nodes (green for formulas, blue for factors)
-- Expandable/collapsible tree structure
+- **Tree View**: Color-coded nodes (green for formulas, blue for factors) with expandable/collapsible structure
+- **Diagram View**: Interactive GoJS graph visualization for complex relationships
 - Visual indicators for reused nodes (♻️ badge and dashed borders)
 - Real-time computed values displayed alongside formulas
+- Toggle between views for different perspectives
 
 ### ⚡ Live Calculation
 - Formulas evaluate automatically when values change
@@ -29,7 +30,9 @@ A single node (like `price`) can be used by multiple parent formulas. When you u
 - Form-based node creation (factor or formula types)
 - Select existing nodes as children when building formulas
 - Quick-edit panel for updating factor values
+- **Inline editing**: Click any node name in the tree to edit its properties directly
 - Multiple root trees displayed simultaneously
+- Flexible unit field for any measurement type (currency, weight, etc.)
 
 ### 💾 Export/Import
 - Export entire tree structure to JSON file
@@ -92,16 +95,19 @@ Once the server is running, open your browser and navigate to `http://localhost:
    - Choose a child to solve for
    - Set a target value and click "⚡ Compute Child Value"
    - Review the computed result and click "✔️ Apply Value" to update
-5. **Export your work**: Click "💾 Export Tree" to save as JSON
-6. **Import later**: Click "📂 Import Tree" to restore a saved tree
-7. **Create your own**: Use the form to add new factor or formula nodes
+5. **Switch visualization views**: Use the "Tree View" / "Diagram View" toggle to see your formulas as a hierarchical tree or interactive graph
+6. **Edit nodes inline**: Click on any node name in the tree to open an inline editor for its properties
+7. **Export your work**: Click "💾 Export Tree" to save as JSON
+8. **Import later**: Click "📂 Import Tree" to restore a saved tree
+9. **Create your own**: Use the form to add new factor or formula nodes
 
 ## Project Structure
 
 - `src/app/models/formula-node.model.ts` - Data models for nodes and registry
 - `src/app/services/formula-tree.service.ts` - Tree operations, formula evaluation, node management, and reverse calculation
-- `src/app/formula-tree/` - Recursive tree visualization component
+- `src/app/formula-tree/` - Recursive tree visualization component with inline editing
 - `src/app/formula-builder/` - Main UI for building and editing trees
+- `src/app/gojs-diagram/` - GoJS-based graph visualization component
 - `src/app/home/` - Landing page with feature overview
 
 ## Technical Details
@@ -119,6 +125,7 @@ Once the server is running, open your browser and navigate to `http://localhost:
 For detailed technical documentation, see:
 - **`export-import.txt`** - Complete export/import feature documentation
 - **`compute-child-feature.txt`** - Reverse calculation implementation details
+- **`enhancement-gojs.txt`** - GoJS visualization implementation
 - **`.github/copilot-instructions.md`** - Developer guidance and project conventions
 
 ## Code scaffolding
