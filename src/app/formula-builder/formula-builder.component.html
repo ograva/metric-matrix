@@ -1,0 +1,246 @@
+<div class="formula-builder-container">
+  <header class="app-header">
+    <h1>Formula Tree Builder</h1>
+    <p class="subtitle">Model formulas using tree structures with parent nodes containing formulas and child nodes containing factors. <strong>Nodes can be reused!</strong></p>
+  </header>
+
+  <div class="main-content">
+    <aside class="sidebar">
+      <div class="panel">
+        <h2>Create Node</h2>
+        
+        <div class="form-group">
+          <label for="nodeName">Node Name</label>
+          <input 
+            id="nodeName"
+            type="text" 
+            [(ngModel)]="newNodeName" 
+            placeholder="e.g., total, price, quantity"
+            class="form-control">
+        </div>
+
+        <div class="form-group">
+          <label for="nodeType">Node Type</label>
+          <select 
+            id="nodeType"
+            [(ngModel)]="newNodeType" 
+            (change)="onNodeTypeChange()"
+            class="form-control">
+            <option value="factor">Factor (direct value)</option>
+            <option value="formula">Formula (computed)</option>
+          </select>
+        </div>
+
+        <div class="form-group" *ngIf="newNodeType === 'factor'">
+          <label for="nodeValue">Value</label>
+          <input 
+            id="nodeValue"
+            type="number" 
+            [(ngModel)]="newNodeValue" 
+            class="form-control">
+        </div>
+
+        <div class="form-group" *ngIf="newNodeType === 'formula'">
+          <label for="nodeFormula">Formula</label>
+          <input 
+            id="nodeFormula"
+            type="text" 
+            [(ngModel)]="newNodeFormula" 
+            placeholder="e.g., price * quantity"
+            class="form-control">
+          <small class="help-text">Use child node names as variables. Supports: +, -, *, /, ()</small>
+        </div>
+
+        <div class="form-group" *ngIf="newNodeType === 'formula'">
+          <label>Select Child Nodes</label>
+          <div class="checkbox-list">
+            <label *ngFor="let node of availableNodes" class="checkbox-item">
+              <input 
+                type="checkbox" 
+                [checked]="isChildSelected(node.id)"
+                (change)="toggleChildSelection(node.id)">
+              <span>{{ node.name }} ({{ node.type }})</span>
+            </label>
+          </div>
+          <small class="help-text">Select nodes to use in the formula</small>
+        </div>
+
+        <div class="form-group">
+          <label for="nodeUnit">Unit (optional)</label>
+          <input 
+            id="nodeUnit"
+            type="text" 
+            [(ngModel)]="newNodeUnit" 
+            placeholder="e.g., $, kg, m²"
+            class="form-control">
+        </div>
+
+        <div class="form-group">
+          <label for="nodeDescription">Description (optional)</label>
+          <textarea 
+            id="nodeDescription"
+            [(ngModel)]="newNodeDescription" 
+            placeholder="Description of this node"
+            rows="3"
+            class="form-control"></textarea>
+        </div>
+
+        <div class="form-group">
+          <label for="parentNode">Parent Node (optional)</label>
+          <select 
+            id="parentNode"
+            [(ngModel)]="selectedParentId" 
+            class="form-control">
+            <option [ngValue]="null">Root (no parent)</option>
+            <option *ngFor="let node of allNodes" [ngValue]="node.id">
+              {{ node.name }} ({{ node.type }})
+            </option>
+          </select>
+          <small class="help-text">Select a parent to add this node as a child</small>
+        </div>
+
+        <div class="button-group">
+          <button class="btn btn-primary" (click)="createNewNode()">
+            Create Node
+          </button>
+          <button class="btn btn-secondary" (click)="resetForm()">
+            Clear Form
+          </button>
+        </div>
+      </div>
+
+      <div class="panel">
+        <h2>Quick Edit Factor Values</h2>
+        <div class="factor-list">
+          <div *ngFor="let node of getFactorNodes()" class="factor-item">
+            <label>{{ node.name }}</label>
+            <input 
+              type="number" 
+              [value]="node.value" 
+              (change)="updateNodeValue(node, +$any($event.target).value)"
+              class="form-control-sm">
+            <span class="reused-indicator" *ngIf="(node.parentIds?.length ?? 0) > 1">
+              ♻️ Used {{ node.parentIds?.length }}x
+            </span>
+          </div>
+        </div>
+      </div>
+
+      <div class="panel compute-child-panel">
+        <h2>🧮 Compute Child Value</h2>
+        <p class="panel-description">Solve for a child node's value given a desired parent result</p>
+        
+        <div class="form-group">
+          <label for="computeParent">1. Select Parent Formula</label>
+          <select 
+            id="computeParent"
+            [(ngModel)]="computeParentId" 
+            class="form-control">
+            <option [ngValue]="null">-- Select a formula node --</option>
+            <option *ngFor="let node of getFormulaNodes()" [ngValue]="node.id">
+              {{ node.name }} = {{ node.computedValue?.toFixed(2) ?? 'N/A' }}
+            </option>
+          </select>
+        </div>
+
+        <div class="form-group" *ngIf="computeParentId">
+          <label for="computeChild">2. Select Child to Solve For</label>
+          <select 
+            id="computeChild"
+            [(ngModel)]="computeChildId" 
+            class="form-control">
+            <option [ngValue]="null">-- Select a child node --</option>
+            <option *ngFor="let node of getChildrenOfParent(computeParentId)" [ngValue]="node.id">
+              {{ node.name }} (current: {{ node.computedValue?.toFixed(2) ?? 'N/A' }})
+            </option>
+          </select>
+        </div>
+
+        <div class="form-group" *ngIf="computeChildId">
+          <label for="computeTarget">3. Set Target Parent Value</label>
+          <input 
+            id="computeTarget"
+            type="number" 
+            [(ngModel)]="computeTargetValue" 
+            step="0.01"
+            class="form-control"
+            placeholder="Desired parent value">
+        </div>
+
+        <button 
+          class="btn btn-primary" 
+          (click)="computeChild()"
+          [disabled]="!computeParentId || !computeChildId"
+          style="width: 100%; margin-bottom: 12px;">
+          ⚡ Compute Child Value
+        </button>
+
+        <div *ngIf="computedChildValue !== null" class="computed-result success-result">
+          <div class="result-header">✅ Computed Successfully</div>
+          <div class="result-value">
+            <strong>{{ formulaTreeService.getNode(computeChildId!)?.name }}</strong> = 
+            <span class="value-highlight">{{ computedChildValue.toFixed(6) }}</span>
+          </div>
+          <div class="result-actions">
+            <button class="btn btn-success" (click)="applyComputedValue()" style="flex: 1;">
+              ✔️ Apply Value
+            </button>
+            <button class="btn btn-secondary" (click)="resetComputeForm()" style="flex: 1;">
+              ↺ Reset
+            </button>
+          </div>
+        </div>
+
+        <div *ngIf="computeError" class="computed-result error-result">
+          <div class="result-header">❌ Computation Failed</div>
+          <div class="error-message">{{ computeError }}</div>
+          <button class="btn btn-secondary" (click)="resetComputeForm()" style="width: 100%;">
+            ↺ Try Again
+          </button>
+        </div>
+      </div>
+
+      <div class="panel">
+        <h2>Actions</h2>
+        <div class="button-group-vertical">
+          <button class="btn btn-secondary" (click)="loadSampleTree()">
+            📊 Load Sample Tree
+          </button>
+          <button class="btn btn-success" (click)="exportTree()">
+            💾 Export Tree
+          </button>
+          <label class="btn btn-info file-upload-btn">
+            📂 Import Tree
+            <input 
+              type="file" 
+              accept=".json"
+              (change)="importTree($event)"
+              style="display: none;">
+          </label>
+          <button class="btn btn-danger" (click)="resetTree()">
+            🗑️ Clear Tree
+          </button>
+        </div>
+      </div>
+    </aside>
+
+    <main class="tree-display">
+      <div class="panel">
+        <h2>Formula Trees</h2>
+        
+        <div *ngIf="rootNodeIds.length > 0" class="tree-container">
+          <div *ngFor="let rootId of rootNodeIds; let i = index" class="tree-section">
+            <h3 class="tree-title">Tree {{ i + 1 }}</h3>
+            <app-formula-tree [nodeId]="rootId"></app-formula-tree>
+          </div>
+        </div>
+
+        <div *ngIf="rootNodeIds.length === 0" class="empty-state">
+          <p>No trees created yet.</p>
+          <p>Create a new node or load the sample tree to get started.</p>
+          <p class="highlight">💡 The sample tree demonstrates node reuse: the "price" node is shared across multiple calculations!</p>
+        </div>
+      </div>
+    </main>
+  </div>
+</div>

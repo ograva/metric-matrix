@@ -1,0 +1,143 @@
+.tree-node {
+  margin: 8px 0;
+
+  .node-header {
+    display: flex;
+    align-items: flex-start;
+    padding: 12px;
+    border-radius: 6px;
+    border: 2px solid #e0e0e0;
+    background-color: #ffffff;
+    transition: all 0.2s ease;
+
+    &:hover {
+      box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+    }
+
+    &.formula-node {
+      border-color: #4caf50;
+      background-color: #f1f8f4;
+    }
+
+    &.factor-node {
+      border-color: #2196f3;
+      background-color: #f3f8fc;
+    }
+
+    &.reused-node {
+      border-width: 3px;
+      border-style: dashed;
+      box-shadow: 0 0 8px rgba(76, 175, 80, 0.3);
+    }
+  }
+
+  .expand-button {
+    background: none;
+    border: none;
+    font-size: 12px;
+    cursor: pointer;
+    padding: 4px 8px;
+    margin-right: 8px;
+    color: #666;
+    min-width: 24px;
+    
+    &:hover {
+      color: #000;
+    }
+  }
+
+  .node-content {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+  }
+
+  .node-main {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+  }
+
+  .node-name {
+    font-size: 16px;
+    font-weight: 600;
+    color: #333;
+  }
+
+  .node-type-badge {
+    font-size: 11px;
+    padding: 2px 8px;
+    border-radius: 12px;
+    background-color: #e0e0e0;
+    color: #666;
+    text-transform: uppercase;
+    font-weight: 500;
+  }
+
+  .reused-badge {
+    font-size: 11px;
+    padding: 2px 8px;
+    border-radius: 12px;
+    background-color: #4caf50;
+    color: white;
+    font-weight: 500;
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+  }
+
+  .node-details {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 16px;
+    font-size: 14px;
+  }
+
+  .formula {
+    color: #2e7d32;
+    
+    code {
+      background-color: #e8f5e9;
+      padding: 2px 6px;
+      border-radius: 3px;
+      font-family: 'Courier New', monospace;
+      font-size: 13px;
+    }
+  }
+
+  .value {
+    color: #1565c0;
+    font-weight: 500;
+  }
+
+  .computed-value {
+    color: #666;
+    
+    strong {
+      color: #000;
+      font-size: 16px;
+      font-weight: 700;
+    }
+  }
+
+  .unit {
+    color: #999;
+    font-size: 12px;
+    margin-left: 4px;
+  }
+
+  .node-description {
+    font-size: 13px;
+    color: #666;
+    font-style: italic;
+    margin-top: 4px;
+  }
+
+  .node-children {
+    margin-left: 24px;
+    border-left: 2px solid #e0e0e0;
+    padding-left: 8px;
+  }
+}

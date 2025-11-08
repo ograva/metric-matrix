@@ -1,0 +1,61 @@
+Export/Import Features Summary
+================================
+
+New Features Added:
+
+1. Export to JSON 💾
+   - Click "Export Tree" button to download your entire tree structure as a .json file
+   - Includes all nodes, relationships, formulas, and values
+   - File includes metadata (export date, version)
+
+2. Import from JSON 📂
+   - Click "Import Tree" button to select a previously exported .json file
+   - Validates the file format before importing
+   - Automatically re-evaluates all formulas after import
+   - Shows success/error messages
+
+3. Data Integrity
+   - Export preserves the complete registry including node relationships
+   - Import validates data structure before loading
+   - Circular dependency protection still applies after import
+
+Technical Implementation:
+
+Service Methods Added (formula-tree.service.ts):
+- exportToJson() - Serializes the entire registry to JSON string
+- importFromJson(jsonString) - Deserializes and validates JSON data
+- downloadAsFile(filename) - Triggers browser download of JSON file
+
+Component Methods Added (formula-builder.component.ts):
+- exportTree() - Calls service to download file
+- importTree(event) - Handles file selection and reading
+
+UI Updates:
+- Added two new buttons in the Actions panel with emoji icons
+- Import button uses a hidden file input for better UX
+- Color-coded buttons (green for export, blue for import)
+
+How to Use:
+
+1. Load the sample tree (or create your own)
+2. Click "💾 Export Tree" - a formula-tree.json file will download
+3. Click "🗑️ Clear Tree" to reset everything
+4. Click "📂 Import Tree" and select your exported file
+5. Watch your tree restore perfectly with all values and relationships intact!
+
+Use Cases:
+- Saving your work for later
+- Sharing tree models with others
+- Version control of formula structures
+- Backup and restore functionality
+
+Export File Format:
+{
+  "nodes": [
+    [nodeId, nodeObject],
+    ...
+  ],
+  "rootNodeIds": ["node_id_1", "node_id_2"],
+  "exportDate": "2025-11-08T...",
+  "version": "1.0"
+}

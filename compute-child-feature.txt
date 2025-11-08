@@ -1,0 +1,369 @@
+Compute Child Value Feature
+===========================
+
+Overview:
+---------
+This feature enables reverse calculation - solving for a child node's value given a desired parent formula result. Instead of computing the parent from children, you can specify what you want the parent to be and let the system calculate what one of the children should be.
+
+How It Works:
+-------------
+
+1. Select a parent node (must be a formula node)
+2. Choose which child node to solve for
+3. Set the target value you want the parent to equal
+4. Click "Compute Child Value"
+5. The system calculates and sets the appropriate child value
+
+Example Use Case:
+-----------------
+
+Given a formula: total = price * quantity
+
+Current state:
+- price = 100
+- quantity = 5
+- total = 500
+
+If you want total = 750:
+1. Select "total" as parent
+2. Select "quantity" as child to solve for
+3. Set target value = 750
+4. System calculates: quantity = 750 / 100 = 7.5
+5. Quantity is automatically updated to 7.5
+
+Technical Implementation:
+-------------------------
+
+Two-Stage Solving Approach:
+
+1. Algebraic Solver (Fast & Exact)
+   - Detects simple patterns in formulas
+   - Solves directly using algebraic manipulation
+   - Supported patterns:
+     * childName * value  →  child = target / value
+     * childName + value  →  child = target - value
+     * childName - value  →  child = target + value
+     * value - childName  →  child = value - target
+     * childName / value  →  child = target * value
+     * value / childName  →  child = value / target
+
+2. Numerical Solver (General Purpose)
+   - Uses Secant Method for iterative solving
+   - Handles complex formulas with multiple operations
+   - Converges to solution within tolerance (1e-6)
+   - Max 100 iterations with divergence protection
+   - Works for any computable formula
+
+Key Methods Added:
+
+Service (formula-tree.service.ts):
+- computeChildValue(parentId, childId, targetValue)
+  Main method that orchestrates the solving process
+
+- trySolveAlgebraically(parent, child, targetValue)
+  Attempts fast algebraic solution for simple patterns
+
+- solveNumerically(evaluateFunc, targetValue, initialGuess)
+  Falls back to numerical method for complex formulas
+
+Component (formula-builder.component.ts):
+- computeChild()
+  UI handler that calls service and updates the tree
+
+- getFormulaNodes()
+  Helper to populate parent dropdown
+
+- getChildrenOfParent(parentId)
+  Helper to populate child dropdown based on selected parent
+
+UI Features:
+------------
+
+New Panel: "🧮 Compute Child Value"
+- Distinctive styling with gradient background and purple border
+- Three-step workflow with progressive disclosure
+- Dropdowns show current computed values for context
+- Disabled state until all inputs are selected
+- Success/error alerts with calculated results
+
+Panel Location:
+- Positioned in the sidebar above the Actions panel
+- Collapses gracefully when no parent is selected
+
+Visual Design:
+- Light blue gradient background (#f5f7fa → #f0f4ff)
+- Purple accent color matching app theme
+- Clear step numbers (1, 2, 3)
+- Shows current values in dropdown labels
+- Full-width compute button with lightning icon ⚡
+
+Limitations & Considerations:
+------------------------------
+
+1. Only works with factor nodes as children (can't solve for computed children)
+2. Numerical solver may not converge for highly nonlinear formulas
+3. Multiple solutions exist for some formulas (finds one solution)
+4. Division by zero or invalid operations will cause errors
+5. All other child values remain fixed during computation
+
+Advanced Scenarios:
+-------------------
+
+Complex Formula Example:
+  Formula: result = (a + b) * c / d
+  To solve for 'a':
+  - Algebraically infeasible (too complex)
+  - Numerical solver iterates to find value
+  - Keeps b, c, d constant
+
+Multiple Instances:
+  If the child node is reused elsewhere:
+  - Updating it affects all parent formulas using it
+  - All root nodes are re-evaluated after update
+  - Visual indicators (♻️) show reuse count
+
+Testing the Feature:
+---------------------
+
+1. Load the sample tree
+2. Note: total1 = subtotal1 + tax1
+3. Current total1 ≈ 575
+4. Select total1 as parent
+5. Select subtotal1 as child
+6. Set target = 700
+7. Compute → subtotal1 updates to make total1 = 700
+8. Observe tax1 also recalculates based on new subtotal1
+
+Another test:
+1. Select subtotal1 (= price * quantity1)
+2. Select price as child
+3. Set target = 600
+4. Compute → price updates to 120 (600 / 5)
+5. Observe both subtotal1 AND subtotal2 change (price is reused!)
+
+Files Modified:
+---------------
+- src/app/services/formula-tree.service.ts
+  Added: computeChildValue, trySolveAlgebraically, solveNumerically
+
+- src/app/formula-builder/formula-builder.component.ts
+  Added: computeChild, getFormulaNodes, getChildrenOfParent
+  Added properties: computeParentId, computeChildId, computeTargetValue
+
+- src/app/formula-builder/formula-builder.component.html
+  Added: Compute Child Value panel with 3-step form
+
+- src/app/formula-builder/formula-builder.component.scss
+  Added: compute-child-panel styling with gradient and accent color
+
+
+ENHANCEMENT: Two-Step Apply Workflow
+=====================================
+Date: November 8, 2025
+
+Overview:
+---------
+Enhanced the compute child feature to use a preview-and-confirm workflow instead of 
+automatically applying changes. Users now see the computed value and can review it 
+before deciding to apply it to the tree.
+
+New Workflow:
+-------------
+
+1. Select a parent node (formula)
+2. Choose which child node to solve for
+3. Set the target value for the parent
+4. Click "⚡ Compute Child Value" button
+5. **NEW:** Review the computed result displayed in a result box
+6. **NEW:** Click "✔️ Apply Value" to confirm and apply the change
+7. **NEW:** Or click "↺ Reset" to cancel without making changes
+
+Key Benefits:
+-------------
+
+1. **Preview Before Commit**
+   - See the exact computed value with 6 decimal places
+   - Understand the magnitude of the change before applying
+   - Prevent accidental updates to critical values
+
+2. **Safety Net**
+   - Can reset and try different scenarios
+   - No changes made until explicitly confirmed
+   - Reduces user errors and increases confidence
+
+3. **Better Error Handling**
+   - Clear visual distinction between success and error states
+   - Error messages displayed in context
+   - Easy recovery with "Try Again" button
+
+4. **Enhanced UX**
+   - Smooth slide-in animation for results
+   - Color-coded feedback (green for success, red for error)
+   - Clear call-to-action buttons
+
+Technical Changes:
+------------------
+
+Component Properties Added (formula-builder.component.ts):
+- computedChildValue: number | null
+  Stores the calculated value before applying
+  
+- computeError: string | null
+  Stores error message if computation fails
+
+Component Methods Modified:
+- computeChild()
+  Now stores result in computedChildValue instead of auto-applying
+  Populates computeError on failure
+  
+Component Methods Added:
+- applyComputedValue()
+  Applies the computed value to the child node
+  Shows success alert and resets form
+  
+- resetComputeForm()
+  Clears all compute-related form fields and results
+  
+Constructor Change:
+- Changed from private to public formulaTreeService
+  Required for template to access service in result display
+
+UI Components Added (formula-builder.component.html):
+
+Success Result Box:
+- Green background with ✅ icon
+- Displays: childName = computed_value (6 decimals)
+- Two action buttons:
+  * "✔️ Apply Value" (green button) - confirms change
+  * "↺ Reset" (gray button) - cancels operation
+
+Error Result Box:
+- Red background with ❌ icon
+- Shows error message in white box
+- "↺ Try Again" button to reset and retry
+
+Styling Added (formula-builder.component.scss):
+
+.computed-result class:
+- Base styling for result boxes
+- Slide-in animation (slideIn keyframe)
+- Padding, border-radius, margin
+
+.success-result modifier:
+- Green color scheme (#e8f5e9 background, #4caf50 border)
+- Success-specific text colors
+
+.error-result modifier:
+- Red color scheme (#ffebee background, #f44336 border)
+- Error message styling
+
+Additional styles:
+- .result-header: Bold header with icon
+- .result-value: White box with centered value display
+- .result-actions: Flex container for action buttons
+- @keyframes slideIn: Smooth fade and slide animation
+
+User Experience Flow:
+---------------------
+
+Success Path:
+1. User completes 3-step form
+2. Clicks "Compute Child Value"
+3. Green box slides in showing: "✅ Computed Successfully"
+4. Displays: "childName = 123.456789"
+5. User reviews the value
+6. Clicks "✔️ Apply Value"
+7. Alert confirms: "Successfully applied: childName = 123.456789"
+8. Tree updates with new value
+9. Form resets automatically
+
+Error Path:
+1. User completes form
+2. Clicks "Compute Child Value"
+3. Red box slides in showing: "❌ Computation Failed"
+4. Error message explains what went wrong
+5. User clicks "↺ Try Again"
+6. Form resets, ready for new attempt
+
+Cancel Path:
+1. User sees computed value
+2. Decides not to apply it
+3. Clicks "↺ Reset"
+4. Form clears without making changes
+
+Testing Scenarios:
+------------------
+
+Test 1: Simple Success Case
+- Parent: subtotal1 (= price * quantity1)
+- Child: price
+- Current: price = 100, quantity1 = 5, subtotal1 = 500
+- Target: 600
+- Expected: Computed value = 120.000000
+- After apply: All formulas using price recalculate
+
+Test 2: Complex Formula
+- Parent: total1 (= subtotal1 + tax1)
+- Child: subtotal1
+- Target: arbitrary value
+- Expected: Numerical solver finds solution
+- Shows value, user can preview before applying
+
+Test 3: Error Case
+- Parent: formula with division
+- Child: denominator factor
+- Target: causes division by zero
+- Expected: Red error box with message
+- User can reset and try different values
+
+Test 4: Cancel Workflow
+- Compute any valid result
+- Instead of applying, click Reset
+- Expected: Form clears, no changes made
+- Tree remains unchanged
+
+Visual Specifications:
+----------------------
+
+Success Box:
+- Background: #e8f5e9 (light green)
+- Border: 2px solid #4caf50 (green)
+- Header: #2e7d32 (dark green) with ✅
+- Value box: white background, centered text
+- Child name: #667eea (purple)
+- Computed value: #4caf50 (green), bold, 18px
+
+Error Box:
+- Background: #ffebee (light red)
+- Border: 2px solid #f44336 (red)
+- Header: #c62828 (dark red) with ❌
+- Error message: white background, #d32f2f text
+
+Animation:
+- Duration: 0.3s
+- Easing: ease-out
+- Effect: Fade in + slide down 10px
+
+Button Layout:
+- Flex container with gap: 8px
+- Buttons flex: 1 (equal width)
+- Apply button: green (#4caf50)
+- Reset/Try Again: gray (#e0e0e0)
+
+Files Modified in Enhancement:
+-------------------------------
+- src/app/formula-builder/formula-builder.component.ts
+  Modified: computeChild() method logic
+  Added: applyComputedValue(), resetComputeForm()
+  Added: computedChildValue, computeError properties
+  Changed: constructor visibility (private → public)
+
+- src/app/formula-builder/formula-builder.component.html
+  Added: Success result box with apply/reset buttons
+  Added: Error result box with try again button
+  Modified: Compute button (removed full width on last one)
+
+- src/app/formula-builder/formula-builder.component.scss
+  Added: .computed-result and modifier classes
+  Added: @keyframes slideIn animation
+  Added: Result header, value, and action styles

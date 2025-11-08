@@ -1,0 +1,50 @@
+<div class="tree-node" [style]="getIndentStyle()" *ngIf="node">
+  <div class="node-header" 
+       [class.formula-node]="node.type === 'formula'" 
+       [class.factor-node]="node.type === 'factor'"
+       [class.reused-node]="isReusedNode()">
+    <button 
+      *ngIf="hasChildren()" 
+      class="expand-button" 
+      (click)="toggleExpand()"
+      [attr.aria-label]="isExpanded ? 'Collapse' : 'Expand'">
+      {{ isExpanded ? '▼' : '▶' }}
+    </button>
+    
+    <div class="node-content">
+      <div class="node-main">
+        <span class="node-name">{{ node.name }}</span>
+        <span class="node-type-badge">{{ node.type }}</span>
+        <span *ngIf="isReusedNode()" class="reused-badge" 
+              [title]="'This node is reused by ' + getParentCount() + ' parent(s)'">
+          ♻️ Reused ({{ getParentCount() }}x)
+        </span>
+      </div>
+      
+      <div class="node-details">
+        <span *ngIf="node.type === 'formula'" class="formula">
+          Formula: <code>{{ node.formula }}</code>
+        </span>
+        <span *ngIf="node.type === 'factor'" class="value">
+          Value: {{ node.value }}
+        </span>
+        <span class="computed-value">
+          = <strong>{{ node.computedValue | number:'1.2-2' }}</strong>
+          <span *ngIf="node.unit" class="unit">{{ node.unit }}</span>
+        </span>
+      </div>
+      
+      <div *ngIf="node.description" class="node-description">
+        {{ node.description }}
+      </div>
+    </div>
+  </div>
+
+  <div *ngIf="hasChildren() && isExpanded" class="node-children">
+    <app-formula-tree 
+      *ngFor="let child of children" 
+      [nodeId]="child.id" 
+      [level]="level + 1">
+    </app-formula-tree>
+  </div>
+</div>
